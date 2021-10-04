@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="viewport"
+        content="width = device-width, initial-scale = 1.0, minimum-scale = 1, maximum-scale = 1, user-scalable = no, viewport-fit=cover,minimal-ui" />
+    <title></title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/howler@2.2.3/dist/howler.min.js"></script>
+</head>
+
+<style type="text/css">
+    body {
+        background-color: black;
+        min-height: 100vh;
+        min-width: 100vw;
+        height: 100%;
+        width: 100vw;
+        margin: auto;
+    }
+
+    #container {
+        position: absolute;
+        overflow: hidden;
+    }
+</style>
+
+<body>
+    <script>
+        var bgm = new Howl({
+            src: ['bgm.mp3']
+        });
+
+        var bgmOver = new Howl({
+            src: ['gameover.mp3']
+        });
+
+        var bgmClear = new Howl({
+            src: ['clear.mp3']
+        });
+
+        var gameWidth = 1280;
+        var gameHeight = 720;
+        var currentScene = null;
+
+
+        class titleScene extends Phaser.Scene {
+            constructor() {
+                super({ key: "titleScene", active: true });
+            }
+            preload() {
+                this.load.image("titleBg", "title.png");
+                this.load.image("title", "titleMoji.png");
+            }
+            create() {
+                var bg001 = this.add
+                    .tileSprite(0, 0, gameWidth, gameHeight, 'titleBg')
+                    .setOrigin(0)
+                    .setScrollFactor(0);
+                let titleImg = this.add.sprite(gameWidth / 2, 300, "title");
+                /*
+                let text = this.add
+                    .text(200, 100, "Yuusha Breaker!!")
+                    .setFontSize(46)
+                    .setColor("#ff0");
+                */
+                clickButton = this.add
+                    .text(450, 500, "START TO CLICK")
+                    .setStroke("#0000ff", 4)
+                    .setBackgroundColor("#ddbcff")
+                    .setFontSize("40px")
+                    .setColor("#0f0")
+                    .setInteractive();
+                clickButton.on(
+                    "pointerdown",
+                    () => {
+                        this.scene.start("gameScene1");
+                    },
+                    this);
+                this.tweens.add({
+                    targets: clickButton,
+                    alpha: 0.5,
+                    ease: 'Cubic.easeOut',
+                    duration: 500,
+                    repeat: -1,
+                    yoyo: true
+                })
+
+
+
+            }
+
+
+        }
+        class gameScene1 extends Phaser.Scene {
+            constructor() {
+                super({ key: "gameScene1", active: false });
+            }
+            preload() {
+                this.load.image("bg001", "./bg.png");
+                this.load.spritesheet("cat", "./walk.png", {
+                    frameWidth: 128,
+                    frameHeight: 112
+                });
+                this.load.image("goal", "./goal.png");
+
+                this.load.image("ground", "./ground.png");
+                this.load.image("block1", "./block1.png");
+                this.load.image("block2", "./block2.png");
+            }
+            create() {
+                currentScene = this;
+                timerCnt = 0;
+
+                var bg = this.add
+                    .tileSprite(0, 0, gameWidth, gameHeight, 'bg001')
+                    .setOrigin(0)
+                    .setScrollFactor(0);
+
+
+
+                platforms = this.physics.add.staticGroup();
+                platforms.create(200, 700, "ground");
+
+                platforms.create(400, 620, "block1");
+                platforms.create(300, 550, "block2");
+
+                platforms.create(400, 450, "block1");
+                platforms.create(200, 400, "block2");
+
+
+                platforms.create(100, 320, "block1");
+
+                platforms.create(200, 220, "block1");
+                platforms.create(280, 200, "block1");
+
+                platforms.create(350, 150, "block2");
+                platforms.create(450, 180, "block2");
+                platforms.create(650, 140, "block2");
+
+                platforms.create(800, 80, "block1");
+                platforms.create(900, 20, "block1");
+
+                platforms.create(1150, -10, "block2");
+                platforms.create(1300, -80, "block1");
+
+                /*                
+                                platforms.create(100, 320, "block1");
+                                platforms.create(200, 240, "block1");
+                
+                                platforms.create(600, 600 - 30, "block1");
+                                platforms.create(800, 600 - 30, "block1");
+                                platforms.create(1000, 600 - 30, "block1");
+                                platforms.create(1200, 600 - 30, "block1");
+                                platforms.create(1400, 600 - 30, "block1");
+                                platforms.create(1600, 600 - 30, "block1");
+                                platforms.create(1800, 600 - 30, "block1");
+                */
+                goalObj = this.physics.add.sprite(1320, -130, "goal");
+                //                goalObj = this.physics.add.sprite(200, 450, "goal");
+                this.physics.add.collider(goalObj, platforms);
+
+                player = this.add.sprite(0, -20, "cat");
+                this.anims.create({
+                    key: "walkplayer",
+                    frameRate: 30,
+                    frames: this.anims.generateFrameNumbers("cat", { start: 0, end: 9 }),
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: "stopplayer",
+                    frameRate: 1,
+                    frames: this.anims.generateFrameNumbers("cat", { start: 0, end: 0 }),
+                    repeat: -1
+                });
+
+//                container1 = this.add.container(1100, -100, [player]);
+                container1 = this.add.container(200, 650, [player]);
+                container1.setSize(32, 60);
+                this.physics.world.enable(container1);
+                container1.body.mass = 99;
+
+
+                this.physics.add.collider(container1, platforms);
+
+
+                this.physics.add.overlap(container1, goalObj, touchGoal, null, this);
+
+                cursors = this.input.keyboard.createCursorKeys();
+
+                mainCamera = this.cameras.main;
+                mainCamera.startFollow(container1);
+                mainCamera.setFollowOffset(-300, 225);
+
+                remainTime = 30;
+                txtTime = this.add
+                    .text(50, 20, "残り時間：" + remainTime)
+                    .setScrollFactor(0)
+                    .setFontSize(30)
+                    .setStroke("#ffffff", 2)
+                    .setColor("#ffffff");
+
+                txtEnding = this.add
+                    .text(200, 100, "")
+                    .setScrollFactor(0)
+                    .setFontSize(46)
+                    .setColor("#ff0");
+
+                btnReturn = this.add
+                    .text(gameWidth / 2 - 100, 600, " BACK ")
+                    .setScrollFactor(0)
+                    .setFontSize(46)
+                    .setColor("#ff0")
+                    .setBackgroundColor("#aa5500")
+                    .setInteractive();
+                btnReturn.on(
+                    "pointerdown",
+                    () => {
+                        if (bgm != null) {
+                            bgm.stop();
+                        }
+                        if (bgmOver != null) {
+                            bgmOver.stop();
+                        }
+                        this.scene.start("titleScene");
+                    },
+                    this);
+                btnReturn.visible = false;
+
+                bGame = true;
+
+                bgm.loop(true);
+                bgmOver.loop(true);
+                bgm.play();
+
+            }
+            update() {
+                if (bGame == true) {
+                    timerCnt = (timerCnt + 1) % 60;
+                    if (timerCnt == 0) {
+                        remainTime = remainTime - 1;
+                        txtTime.text = "残り時間：" + remainTime;
+                        if(remainTime <= 0){
+                            playGameOver();
+                        }
+                    }
+                    if (cursors.left.isDown) {
+                        player.scaleX = -1;
+                        if (isWalking == false) {
+                            player.play("walkplayer");
+                            isWalking = true;
+                        }
+
+                        //                        player.setFrame(1);
+                        container1.body.setVelocityX(-160);
+                    } else if (cursors.right.isDown) {
+                        player.scaleX = 1;
+                        if (isWalking == false) {
+                            player.play("walkplayer");
+                            isWalking = true;
+                        }
+
+                        //                        player.setFrame(0);
+                        container1.body.setVelocityX(160);
+                        //foot.setVelocityX(160);
+                    } else {
+                        container1.body.setVelocityX(0);
+                        if (isWalking == true) {
+                            player.play("stopplayer");
+                            isWalking = false;
+                        }
+                        //foot.setVelocityX(0);
+                    }
+                    if (cursors.up.isDown && container1.body.touching.down) {
+                        container1.body.setVelocityY(-250);
+                    }
+
+                    console.log(container1.y);
+                    if (container1.y >= 1200) {
+
+                        playGameOver();
+                    }
+                }
+            }
+        }
+        function playGameOver() {
+            mainCamera.stopFollow();
+            bGame = false;
+            if (bgm != null) {
+                bgm.stop();
+            }
+            txtEnding.text = "GAME OVER";
+            txtEnding.visible = true;
+            btnReturn.visible = true;
+
+            bgmOver.play();
+            console.log("play");
+        }
+
+        function touchGoal() {
+            if (bGame == true) {
+                bGame = false;
+                if (bgm != null) {
+                    bgm.stop();
+                }
+                txtEnding.text = "GAME CLEAR";
+                txtEnding.visible = true;
+                btnReturn.visible = true;
+                bgmClear.play();
+                console.log("play");
+                mainCamera.stopFollow();
+                container1.body.setVelocity(0, 0);
+                //this.physics.world.disable();
+                container1.x = goalObj.x;
+                container1.y = goalObj.y;
+            }
+        }
+
+
+        var bGame = false;
+        var timerCnt = 0;
+        var container1;
+        var isWalking = false;
+
+        var remainTime = 0;
+        var txtTime, txtEnding, btnReturn, objBomb, clickButton;
+        var platforms, player, goalObj, cursors, mainCamera;
+        var config = {
+            type: Phaser.AUTO,
+            width: gameWidth,
+            height: gameHeight,
+            backgroundColor: "#eaffff",
+            autoResize: true,
+            physics: {
+                default: "arcade",
+                arcade: {
+                    gravity: { y: 300 },
+                    debug: true
+                }
+            },
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+            },
+            parent: 'game',
+            title: 'Yusha Breaker',
+            version: '0.0.1',
+            audio: { disableWebAudio: true },
+            scene: [titleScene, gameScene1]
+        }
+        var game = new Phaser.Game(config);
+
+    </script>
+</body>
+
+</html>
